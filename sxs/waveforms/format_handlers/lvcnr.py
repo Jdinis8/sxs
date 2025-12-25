@@ -5,6 +5,25 @@ from scipy.interpolate import InterpolatedUnivariateSpline as Spline
 import spherical_functions as sf
 from ... import waveforms
 
+def find_nrtimes(f):
+    matches = []
+
+    def visitor(name, obj):
+        if name.lower() == "nrtimes":
+            if not isinstance(obj, h5py.Dataset):
+                raise TypeError(f"'nrtimes' found but is not a dataset: {name}")
+            matches.append(np.array(obj[:], dtype=np.float64))
+            return 1  # stop reading the file further
+
+    f.visititems(visitor)
+
+    if len(matches) == 0:
+        raise RuntimeError("nrtimes not found in file")
+    if len(matches) > 1:
+        raise RuntimeError(f"Multiple nrtimes datasets found ({len(matches)})")
+
+    return matches[0]
+
 def load(file_name):
     # This function is a draft to read strain waveforms from the RIT and MAYA waveform catalogs.
 
@@ -14,20 +33,7 @@ def load(file_name):
     #Set up default time key, but adapt to the possibility that it is lower case in some files
                 
     with h5py.File(file_name, "r") as f:
-        t = []
-        def check_structure(name, obj):
-            nonlocal t
-            if name.lower() == "nrtimes":
-                t = np.array(f[name][:], dtype=np.float64)
-                raise StopIteration  # stop traversal immediately
-
-        try:
-            f.visititems(check_structure)
-        except StopIteration:
-            pass
-        
-        if len(t) == 0:
-            raise RuntimeError("nrtimes not found in file")
+        t = find_nrtimes(f)
         
         ell_m = np.array(
             [[int(match["ell"]), int(match["m"])] for key in f for match in [phase_re.match(key)] if match]
