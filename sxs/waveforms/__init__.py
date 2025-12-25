@@ -16,6 +16,7 @@ from .format_handlers import (
     rotating_paired_xor_multishuffle_bzip2,
     spectre_cce_v1,
     grathena,
+    lvcnr,
 )
 from .format_handlers.lvc import to_lvc_conventions
 from . import memory, transformations, alignment, norms
