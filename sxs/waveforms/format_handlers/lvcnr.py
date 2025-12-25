@@ -6,15 +6,15 @@ import spherical_functions as sf
 from ... import waveforms
 
 def load(file_name):
-    # This function is a draft to read waveforms from the RIT and MAYA waveform catalogs.
+    # This function is a draft to read strain waveforms from the RIT and MAYA waveform catalogs.
 
     phase_re = re.compile("phase_l(?P<ell>.*)_m(?P<m>.*)")
     amp_re = re.compile("amp_l(?P<ell>.*)_m(?P<m>.*)")
 
     #Set up default time key, but adapt to the possibility that it is lower case in some files
-        
-    t = []
+                
     with h5py.File(file_name, "r") as f:
+        t = []
         def check_structure(name, obj):
             nonlocal t
             if name.lower() == "nrtimes":
@@ -26,7 +26,9 @@ def load(file_name):
         except StopIteration:
             pass
         
-    with h5py.File(file_name, "r") as f:
+        if len(t) == 0:
+            raise RuntimeError("nrtimes not found in file")
+        
         ell_m = np.array(
             [[int(match["ell"]), int(match["m"])] for key in f for match in [phase_re.match(key)] if match]
         )
